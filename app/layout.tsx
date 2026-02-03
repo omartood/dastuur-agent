@@ -7,8 +7,8 @@ import "./globals.css";
 // Actually, to be safe and avoid missing font files, I'll use standard fonts or just remove the localFont imports for now and stick to Tailwind sans.
 
 export const metadata: Metadata = {
-  title: "Somali Constitution AI",
-  description: "Legal retrieval QA system for the Somali Federal Constitution",
+  title: "Dastuur Agent - Somali Constitution AI Assistant",
+  description: "Intelligent AI-powered assistant for the Somali Provisional Constitution. Ask questions and get accurate answers using advanced RAG technology.",
 };
 
 export default function RootLayout({

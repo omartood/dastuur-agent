@@ -1,13 +1,13 @@
-# 🇸🇴 Dastuurka AI - Somali Constitution AI Assistant
+# 🇸🇴 Dastuur Agent - Somali Constitution AI Assistant
 
 [![Next.js](https://img.shields.io/badge/Next.js-16.1.6-black?style=flat&logo=next.js)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9.3-blue?style=flat&logo=typescript)](https://www.typescriptlang.org/)
 [![Google Gemini](https://img.shields.io/badge/Google-Gemini%20AI-4285F4?style=flat&logo=google)](https://ai.google.dev/)
 [![License](https://img.shields.io/badge/license-ISC-green.svg)](LICENSE)
 
-An intelligent AI-powered assistant that helps users understand and navigate the Somali Provisional Constitution. Built with Next.js, Google Gemini AI, and advanced RAG (Retrieval-Augmented Generation) technology.
+An intelligent AI-powered assistant that helps users understand and navigate the Somali Provisional Constitution. Built with Next.js, Google Gemini, and Memvid AI.
 
-![Dastuurka AI](https://img.shields.io/badge/Status-Active-success)
+![Dastuur Agent](https://img.shields.io/badge/Status-Active-success)
 
 ---
 
@@ -155,8 +155,9 @@ dastur-agents/
 ### AI & Backend
 
 - **[Google Gemini AI](https://ai.google.dev/)** - Large language model
+- **[Memvid AI](https://github.com/omartood/memvid)** - Intelligent vector search & RAG pipeline
 - **[pdf-parse](https://www.npmjs.com/package/pdf-parse)** - PDF text extraction
-- **Custom RAG Pipeline** - Retrieval-Augmented Generation
+- **Custom RAG Implementation** - Context-aware retrieval
 - **Vector Embeddings** - Semantic search with cosine similarity
 
 ### Storage

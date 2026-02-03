@@ -1,275 +1,308 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { Send, Scale, User, Bot, Sparkles, Loader2, BookOpen, Info } from "lucide-react";
-import clsx from "clsx";
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import Sidebar from "./components/Sidebar";
-import {
-  Chat,
-  Message,
-  loadChats,
-  saveChats,
-  createNewChat,
-  updateChat,
-  deleteChat as deleteChatUtil,
-  getChatById,
-  getActiveChatId,
-  setActiveChatId,
-} from "@/lib/chatStorage";
+import { useState, useEffect } from "react";
+import { Scale, Sparkles, Zap, Shield, MessageSquare, ArrowRight, BookOpen, Search, Brain, ChevronDown } from "lucide-react";
+import Link from "next/link";
 
-export default function Home() {
-  const [chats, setChats] = useState<Chat[]>([]);
-  const [currentChatId, setCurrentChatId] = useState<string>("");
-  const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [isInitialized, setIsInitialized] = useState(false);
+export default function LandingPage() {
+  const [isVisible, setIsVisible] = useState(false);
 
-  // Initialize chats from localStorage
   useEffect(() => {
-    const loadedChats = loadChats();
-    
-    if (loadedChats.length === 0) {
-      // Create initial chat if none exist
-      const initialChat = createNewChat();
-      setChats([initialChat]);
-      setCurrentChatId(initialChat.id);
-      saveChats([initialChat]);
-      setActiveChatId(initialChat.id);
-    } else {
-      setChats(loadedChats);
-      const activeChatId = getActiveChatId();
-      const activeChat = activeChatId && getChatById(loadedChats, activeChatId);
-      setCurrentChatId(activeChat ? activeChat.id : loadedChats[0].id);
-    }
-    
-    setIsInitialized(true);
+    setIsVisible(true);
   }, []);
 
-  // Save chats to localStorage whenever they change
-  useEffect(() => {
-    if (isInitialized && chats.length > 0) {
-      saveChats(chats);
-    }
-  }, [chats, isInitialized]);
-
-  // Save active chat ID whenever it changes
-  useEffect(() => {
-    if (isInitialized && currentChatId) {
-      setActiveChatId(currentChatId);
-    }
-  }, [currentChatId, isInitialized]);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [currentChatId, chats]);
-
-  const currentChat = getChatById(chats, currentChatId);
-  const messages = currentChat?.messages || [];
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim() || loading || !currentChatId) return;
-
-    const userMessage = input.trim();
-    const newMessages: Message[] = [...messages, { role: "user", content: userMessage }];
-    
-    // Update chat with user message
-    setChats(prev => updateChat(prev, currentChatId, newMessages));
-    setInput("");
-    setLoading(true);
-
-    try {
-      const res = await fetch("/api/ask", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: userMessage }),
-      });
-
-      const data = await res.json();
-
-      if (res.ok) {
-        const assistantMessage: Message = { role: "assistant", content: data.answer };
-        setChats(prev => updateChat(prev, currentChatId, [...newMessages, assistantMessage]));
-      } else {
-        const errorMessage: Message = { role: "assistant", content: "⚠️ **Raalli ahoow**, cilad ayaa dhacday." };
-        setChats(prev => updateChat(prev, currentChatId, [...newMessages, errorMessage]));
-      }
-    } catch (error) {
-      console.error(error);
-      const errorMessage: Message = { role: "assistant", content: "⚠️ **Raalli ahoow**, cilad ayaa dhacday." };
-      setChats(prev => updateChat(prev, currentChatId, [...newMessages, errorMessage]));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleNewChat = () => {
-    const newChat = createNewChat();
-    setChats(prev => [newChat, ...prev]);
-    setCurrentChatId(newChat.id);
-  };
-
-  const handleSelectChat = (chatId: string) => {
-    setCurrentChatId(chatId);
-  };
-
-  const handleDeleteChat = (chatId: string) => {
-    setChats(prev => {
-      const updated = deleteChatUtil(prev, chatId);
-      
-      // If deleting the active chat, switch to another or create new
-      if (chatId === currentChatId) {
-        if (updated.length > 0) {
-          setCurrentChatId(updated[0].id);
-        } else {
-          const newChat = createNewChat();
-          setCurrentChatId(newChat.id);
-          return [newChat];
-        }
-      }
-      
-      return updated;
-    });
-  };
-
   return (
-    <div className="flex h-screen bg-slate-50 font-sans selection:bg-blue-100 selection:text-blue-900">
-      {/* Sidebar */}
-      <Sidebar
-        chats={chats}
-        activeChatId={currentChatId}
-        onNewChat={handleNewChat}
-        onSelectChat={handleSelectChat}
-        onDeleteChat={handleDeleteChat}
-      />
-
-      {/* Main Chat Area */}
-      <div className="flex flex-col flex-1 h-screen">
-        {/* Premium Header */}
-        <header className="bg-white/80 backdrop-blur-md sticky top-0 z-10 border-b border-slate-200/60 shadow-sm">
-          <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-cyan-50 font-sans selection:bg-blue-200 selection:text-blue-900">
+      {/* Navigation */}
+      <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-lg border-b border-slate-200/60 z-50 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-3">
-              <div className="bg-gradient-to-tr from-blue-600 to-cyan-500 text-white p-2.5 rounded-xl shadow-lg shadow-blue-500/20">
+              <div className="bg-gradient-to-tr from-blue-600 to-cyan-500 text-white p-2 rounded-xl shadow-lg shadow-blue-500/20">
                 <Scale className="w-6 h-6" />
               </div>
-              <div>
-                <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700">
-                  Dastuurka AI
-                </h1>
-                <p className="text-xs font-medium text-slate-500 flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                  Online
-                </p>
-              </div>
+              <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700">
+                Dastuur Agent
+              </span>
             </div>
-            <button className="p-2 text-slate-400 hover:text-blue-600 transition-colors hover:bg-blue-50 rounded-lg">
-              <Info size={20} />
-            </button>
+            <div className="flex items-center gap-4">
+              <Link
+                href="/chat"
+                className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-xl font-medium shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 transform hover:scale-105 transition-all duration-200 flex items-center gap-2"
+              >
+                Launch App
+                <ArrowRight size={18} />
+              </Link>
+            </div>
           </div>
-        </header>
-
-        {/* Chat Area */}
-        <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6 sm:px-6 max-w-4xl mx-auto w-full scroll-smooth">
-          {messages.length === 0 && (
-            <div className="flex flex-col items-center justify-center h-full text-center text-slate-400 opacity-60">
-              <BookOpen size={64} strokeWidth={1} className="mb-4 text-slate-300"/>
-              <p className="text-lg">Waxba lama helin weli</p>
-            </div>
-          )}
-
-          {messages.map((msg, index) => (
-            <div
-              key={index}
-              className={clsx(
-                "flex gap-4 group",
-                msg.role === "user" ? "flex-row-reverse" : "flex-row"
-              )}
-            >
-              {/* Avatar */}
-              <div
-                className={clsx(
-                  "w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-sm transition-transform group-hover:scale-105",
-                  msg.role === "user" 
-                    ? "bg-slate-900 text-white" 
-                    : "bg-white border border-slate-200 text-blue-600"
-                )}
-              >
-                {msg.role === "user" ? <User size={20} /> : <div className="relative"><Sparkles size={20} className="text-blue-500" /></div>}
-              </div>
-              
-              {/* Message Bubble */}
-              <div
-                className={clsx(
-                  "relative p-4 sm:p-5 rounded-2xl max-w-[85%] sm:max-w-[75%] text-[15px] sm:text-base leading-7 shadow-sm transition-all duration-200",
-                  msg.role === "user"
-                    ? "bg-gradient-to-br from-blue-600 to-blue-700 text-white rounded-tr-sm"
-                    : "bg-white border border-slate-200/80 text-slate-800 rounded-tl-sm shadow-slate-200/50"
-                )}
-              >
-                {msg.role === "assistant" ? (
-                  <div className="prose prose-sm prose-slate max-w-none prose-p:leading-relaxed prose-headings:font-bold prose-a:text-blue-600 hover:prose-a:underline prose-strong:text-slate-900 prose-ul:my-2 prose-li:my-0.5">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {msg.content}
-                    </ReactMarkdown>
-                  </div>
-                ) : (
-                  <div className="whitespace-pre-wrap">{msg.content}</div>
-                )}
-              </div>
-            </div>
-          ))}
-
-          {loading && (
-            <div className="flex gap-4">
-              <div className="w-10 h-10 rounded-2xl bg-white border border-slate-200 flex items-center justify-center flex-shrink-0 shadow-sm">
-                <Sparkles size={20} className="text-blue-500 animate-pulse" />
-              </div>
-              <div className="bg-white border border-slate-200 px-6 py-4 rounded-2xl rounded-tl-sm shadow-sm flex items-center gap-3">
-                <div className="flex gap-1">
-                  <span className="w-2 h-2 bg-blue-500 rounded-full animate-bounce delay-75"></span>
-                  <span className="w-2 h-2 bg-blue-500 rounded-full animate-bounce delay-150"></span>
-                  <span className="w-2 h-2 bg-blue-500 rounded-full animate-bounce delay-300"></span>
-                </div>
-                <span className="text-sm text-slate-400 font-medium ml-2">Jawaab ayaa la diyaarinayaa...</span>
-              </div>
-            </div>
-          )}
-          <div ref={messagesEndRef} className="h-4" />
         </div>
+      </nav>
 
-        {/* Input Area */}
-        <div className="p-4 bg-white/80 backdrop-blur-lg border-t border-slate-200">
-          <div className="max-w-4xl mx-auto">
-            <form onSubmit={handleSubmit} className="relative group shadow-lg shadow-slate-200/40 rounded-2xl bg-white">
-              <input
-                type="text"
-                className="w-full bg-transparent border-2 border-transparent focus:border-blue-500/30 rounded-2xl pl-5 pr-14 py-4 focus:outline-none focus:ring-0 transition-all placeholder:text-slate-400 text-slate-700"
-                placeholder="Weydii su'aal ku saabsan Dastuurka..."
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                disabled={loading}
-              />
-              <button
-                type="submit"
-                disabled={loading || !input.trim()}
-                className="absolute right-2 top-2 bottom-2 aspect-square bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:bg-slate-300 text-white rounded-xl transition-all flex items-center justify-center shadow-md shadow-blue-500/20 hover:shadow-blue-500/40 transform hover:scale-105 active:scale-95"
+      {/* Hero Section */}
+      <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div
+            className={`text-center transform transition-all duration-1000 ${
+              isVisible ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0"
+            }`}
+          >
+            {/* Badge */}
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-100 text-blue-700 rounded-full text-sm font-medium mb-8 shadow-sm">
+              <Sparkles size={16} className="animate-pulse" />
+              Powered by Google Gemini & Memvid AI
+            </div>
+
+            {/* Main Headline */}
+            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold mb-6 leading-tight">
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-slate-900 via-blue-800 to-cyan-700">
+                Your AI-Powered
+              </span>
+              <br />
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-cyan-500">
+                Constitutional Assistant
+              </span>
+            </h1>
+
+            {/* Subheadline */}
+            <p className="text-xl sm:text-2xl text-slate-600 mb-12 max-w-3xl mx-auto leading-relaxed">
+              Waxaan ku caawinayaa inaad fahanto <span className="font-semibold text-blue-600">Dastuurka Jamhuuriyadda Federaalka Soomaaliya</span> adoo isticmaalaya teknoolajiyada AI-ga casriga ah.
+            </p>
+
+            {/* CTA Buttons */}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
+              <Link
+                href="/chat"
+                className="group px-8 py-4 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-2xl font-semibold text-lg shadow-2xl shadow-blue-500/40 hover:shadow-blue-500/60 transform hover:scale-105 transition-all duration-200 flex items-center gap-3"
               >
-                {loading ? <Loader2 size={20} className="animate-spin" /> : <Send size={20} />}
-              </button>
-            </form>
-            <p className="text-center text-xs text-slate-400 mt-3">
-              Kaaliyaha Dastuurka waxaa ku shaqeeya AI. Fadlan hubi macluumaadka.
+                Bilow Hadda
+                <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+              </Link>
+              <a
+                href="#features"
+                className="px-8 py-4 bg-white text-slate-700 rounded-2xl font-semibold text-lg shadow-lg hover:shadow-xl border-2 border-slate-200 hover:border-blue-300 transform hover:scale-105 transition-all duration-200 flex items-center gap-3"
+              >
+                Baro Wax Badan
+                <ChevronDown size={20} />
+              </a>
+            </div>
+
+            {/* Hero Image/Visual */}
+            <div className="relative max-w-5xl mx-auto">
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 blur-3xl rounded-full"></div>
+              <div className="relative bg-white/80 backdrop-blur-lg rounded-3xl shadow-2xl border border-slate-200/60 p-8 transform hover:scale-[1.02] transition-transform duration-300">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="flex gap-2">
+                    <div className="w-3 h-3 rounded-full bg-red-400"></div>
+                    <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
+                    <div className="w-3 h-3 rounded-full bg-green-400"></div>
+                  </div>
+                  <div className="flex-1 bg-slate-100 rounded-lg px-4 py-2 text-sm text-slate-500">
+                    dastuur-agent.app
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  {/* Sample Chat Message */}
+                  <div className="flex gap-3 justify-end">
+                    <div className="bg-gradient-to-br from-blue-600 to-blue-700 text-white px-5 py-3 rounded-2xl rounded-tr-sm max-w-md">
+                      Qodobka 3aad maxuu ka hadlayaa?
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 to-cyan-500 flex items-center justify-center flex-shrink-0">
+                      <Sparkles size={20} className="text-white" />
+                    </div>
+                    <div className="bg-white border border-slate-200 px-5 py-3 rounded-2xl rounded-tl-sm max-w-2xl">
+                      <p className="text-slate-700 leading-relaxed">
+                        <strong>Qodobka 3aad</strong> wuxuu ka hadlayaa <strong>Madax-bannaanida iyo Midnimada Qaranka</strong>. Wuxuu sheegayaa in Jamhuuriyadda Federaalka Soomaaliya ay tahay dal madax-bannaan oo midaysan...
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section id="features" className="py-20 px-4 sm:px-6 lg:px-8 bg-white/50">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl sm:text-5xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700">
+              Sababta Aad U Dooranayso Dastuur Agent
+            </h2>
+            <p className="text-xl text-slate-600 max-w-2xl mx-auto">
+              Teknoolajiyada AI-ga casriga ah oo ku salaysan RAG (Retrieval-Augmented Generation)
             </p>
           </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {/* Feature 1 */}
+            <div className="group bg-white rounded-3xl p-8 shadow-lg hover:shadow-2xl border border-slate-200/60 transform hover:scale-105 transition-all duration-300">
+              <div className="bg-gradient-to-br from-blue-500 to-cyan-400 w-14 h-14 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-blue-500/30 group-hover:shadow-blue-500/50 transition-shadow">
+                <Brain size={28} className="text-white" />
+              </div>
+              <h3 className="text-2xl font-bold mb-3 text-slate-900">AI Casri ah</h3>
+              <p className="text-slate-600 leading-relaxed">
+                Waxaan isticmaalnaa Google Gemini & Memvid AI si aan kuugu bixinno jawaabo sax ah oo ku salaysan Dastuurka.
+              </p>
+            </div>
+
+            {/* Feature 2 */}
+            <div className="group bg-white rounded-3xl p-8 shadow-lg hover:shadow-2xl border border-slate-200/60 transform hover:scale-105 transition-all duration-300">
+              <div className="bg-gradient-to-br from-purple-500 to-pink-400 w-14 h-14 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-purple-500/30 group-hover:shadow-purple-500/50 transition-shadow">
+                <Search size={28} className="text-white" />
+              </div>
+              <h3 className="text-2xl font-bold mb-3 text-slate-900">Raadinta Xaqiiqda</h3>
+              <p className="text-slate-600 leading-relaxed">
+                Raadi qodobada iyo cutubada Dastuurka si degdeg ah oo sax ah adoo isticmaalaya luuqadda dabiiciga ah.
+              </p>
+            </div>
+
+            {/* Feature 3 */}
+            <div className="group bg-white rounded-3xl p-8 shadow-lg hover:shadow-2xl border border-slate-200/60 transform hover:scale-105 transition-all duration-300">
+              <div className="bg-gradient-to-br from-emerald-500 to-teal-400 w-14 h-14 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-emerald-500/30 group-hover:shadow-emerald-500/50 transition-shadow">
+                <MessageSquare size={28} className="text-white" />
+              </div>
+              <h3 className="text-2xl font-bold mb-3 text-slate-900">Sheekooyin Badan</h3>
+              <p className="text-slate-600 leading-relaxed">
+                Samayso sheekooyin badan oo kala duwan, mid walba oo leh taariikhdiisa gaarka ah oo la keydiyo.
+              </p>
+            </div>
+
+            {/* Feature 4 */}
+            <div className="group bg-white rounded-3xl p-8 shadow-lg hover:shadow-2xl border border-slate-200/60 transform hover:scale-105 transition-all duration-300">
+              <div className="bg-gradient-to-br from-orange-500 to-red-400 w-14 h-14 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-orange-500/30 group-hover:shadow-orange-500/50 transition-shadow">
+                <Shield size={28} className="text-white" />
+              </div>
+              <h3 className="text-2xl font-bold mb-3 text-slate-900">Macluumaad Sax ah</h3>
+              <p className="text-slate-600 leading-relaxed">
+                Dhammaan jawaabaha waxay ku salaysan yihiin Dastuurka rasmiga ah ee Soomaaliya.
+              </p>
+            </div>
+
+            {/* Feature 5 */}
+            <div className="group bg-white rounded-3xl p-8 shadow-lg hover:shadow-2xl border border-slate-200/60 transform hover:scale-105 transition-all duration-300">
+              <div className="bg-gradient-to-br from-indigo-500 to-blue-400 w-14 h-14 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-indigo-500/30 group-hover:shadow-indigo-500/50 transition-shadow">
+                <Zap size={28} className="text-white" />
+              </div>
+              <h3 className="text-2xl font-bold mb-3 text-slate-900">Degdeg ah</h3>
+              <p className="text-slate-600 leading-relaxed">
+                Hel jawaabo degdeg ah oo sax ah ilaa dhawr ilbiriqsi gudahood.
+              </p>
+            </div>
+
+            {/* Feature 6 */}
+            <div className="group bg-white rounded-3xl p-8 shadow-lg hover:shadow-2xl border border-slate-200/60 transform hover:scale-105 transition-all duration-300">
+              <div className="bg-gradient-to-br from-pink-500 to-rose-400 w-14 h-14 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-pink-500/30 group-hover:shadow-pink-500/50 transition-shadow">
+                <BookOpen size={28} className="text-white" />
+              </div>
+              <h3 className="text-2xl font-bold mb-3 text-slate-900">Fudud in la Isticmaalo</h3>
+              <p className="text-slate-600 leading-relaxed">
+                Interface casri ah oo fudud oo qof walba uu isticmaali karo.
+              </p>
+            </div>
+          </div>
         </div>
-      </div>
+      </section>
+
+      {/* How It Works Section */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl sm:text-5xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700">
+              Sidee Ayuu U Shaqeeyaa?
+            </h2>
+            <p className="text-xl text-slate-600 max-w-2xl mx-auto">
+              Habka fudud ee saddex tallaabo ah
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {/* Step 1 */}
+            <div className="relative">
+              <div className="bg-white rounded-3xl p-8 shadow-xl border border-slate-200/60 h-full">
+                <div className="absolute -top-4 -left-4 bg-gradient-to-br from-blue-600 to-cyan-500 text-white w-12 h-12 rounded-2xl flex items-center justify-center text-2xl font-bold shadow-lg">
+                  1
+                </div>
+                <div className="mt-4">
+                  <h3 className="text-2xl font-bold mb-4 text-slate-900">Weydii Su'aashaada</h3>
+                  <p className="text-slate-600 leading-relaxed">
+                    Qor su'aashaada ku saabsan Dastuurka Soomaaliya adoo isticmaalaya luuqadda dabiiciga ah.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Step 2 */}
+            <div className="relative">
+              <div className="bg-white rounded-3xl p-8 shadow-xl border border-slate-200/60 h-full">
+                <div className="absolute -top-4 -left-4 bg-gradient-to-br from-purple-600 to-pink-500 text-white w-12 h-12 rounded-2xl flex items-center justify-center text-2xl font-bold shadow-lg">
+                  2
+                </div>
+                <div className="mt-4">
+                  <h3 className="text-2xl font-bold mb-4 text-slate-900">AI Wuu Baarayaa</h3>
+                  <p className="text-slate-600 leading-relaxed">
+                    Nidaamkeenu wuxuu raadiyaa qodobada iyo macluumaadka ku habboon Dastuurka.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Step 3 */}
+            <div className="relative">
+              <div className="bg-white rounded-3xl p-8 shadow-xl border border-slate-200/60 h-full">
+                <div className="absolute -top-4 -left-4 bg-gradient-to-br from-emerald-600 to-teal-500 text-white w-12 h-12 rounded-2xl flex items-center justify-center text-2xl font-bold shadow-lg">
+                  3
+                </div>
+                <div className="mt-4">
+                  <h3 className="text-2xl font-bold mb-4 text-slate-900">Hel Jawaabta</h3>
+                  <p className="text-slate-600 leading-relaxed">
+                    Hel jawaab sax ah oo faahfaahsan oo ku salaysan Dastuurka rasmiga ah.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-blue-600 via-cyan-500 to-teal-500">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-4xl sm:text-5xl font-bold text-white mb-6">
+            Diyaar ma u tahay inaad bilowdo?
+          </h2>
+          <p className="text-xl text-blue-100 mb-10 leading-relaxed">
+            Bilow maanta oo fahmo Dastuurka Soomaaliya si fudud oo casri ah
+          </p>
+          <Link
+            href="/chat"
+            className="inline-flex items-center gap-3 px-10 py-5 bg-white text-blue-600 rounded-2xl font-bold text-lg shadow-2xl hover:shadow-white/30 transform hover:scale-105 transition-all duration-200"
+          >
+            Fur Barnaamijka Hadda
+            <ArrowRight size={24} />
+          </Link>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-slate-900 text-slate-300 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto text-center">
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <div className="bg-gradient-to-tr from-blue-600 to-cyan-500 text-white p-2 rounded-xl">
+              <Scale className="w-6 h-6" />
+            </div>
+            <span className="text-2xl font-bold text-white">Dastuur Agent</span>
+          </div>
+          <p className="text-slate-400 mb-6">
+            Kaaliyaha AI-ga ee Dastuurka Jamhuuriyadda Federaalka Soomaaliya
+          </p>
+          <p className="text-sm text-slate-500">
+            © 2026 Dastuur Agent. Xuquuqda way dhawran yihiin.
+          </p>
+        </div>
+      </footer>
     </div>
   );
 }
