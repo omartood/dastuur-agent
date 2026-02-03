@@ -55,7 +55,21 @@ function keywordScore(query: string, text: string): number {
       hits++;
     }
   }
-  return hits / qTerms.length;
+  
+  // Special boost for article number queries (e.g., "Qodobka 3aad")
+  // Extract article number from query
+  const articleMatch = query.match(/qodobka\s+(\d+)(?:aad|naad|saad|aad)/i);
+  if (articleMatch) {
+    const articleNum = articleMatch[1];
+    // Check if the text contains this specific article with actual content (not just TOC)
+    const articlePattern = new RegExp(`qodobka\\s+${articleNum}(?:aad|naad|saad)\\s*\\.\\s*\\w+`, 'i');
+    if (articlePattern.test(text)) {
+      // Strong boost if we find the actual article header with content
+      hits += 5;
+    }
+  }
+  
+  return hits / (qTerms.length + 1); // +1 to account for potential article boost
 }
 
 export function search(queryEmbedding: number[], topK: number = 5, queryText: string = ""): Chunk[] {
@@ -69,15 +83,8 @@ export function search(queryEmbedding: number[], topK: number = 5, queryText: st
     // If queryText is provided, mix in keyword score
     if (queryText) {
        const kwScore = keywordScore(queryText, chunk.text);
-       // Weighting: 70% vector, 30% keyword. 
-       // Adjust as needed. If vector is ~0.6 and keyword is 1.0 => 0.42 + 0.3 = 0.72.
-       score = (cosine * 0.7) + (kwScore * 0.3);
-       
-       // Strong boost for specific structural headers (Qodobka/Cutubka)
-       if (/qodobka|cutubka/i.test(queryText)) {
-          // If query mentions specialized headers, and chunk has them as headers (start of line or similar), boost more
-          // This is a heuristic.
-       }
+       // Weighting: 60% vector, 40% keyword for better article matching
+       score = (cosine * 0.6) + (kwScore * 0.4);
     }
     
     return { chunk, score };
