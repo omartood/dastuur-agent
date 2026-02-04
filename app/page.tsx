@@ -97,7 +97,7 @@ export default function LandingPage() {
                     <div className="w-3 h-3 rounded-full bg-green-400"></div>
                   </div>
                   <div className="flex-1 bg-slate-100 rounded-lg px-4 py-2 text-sm text-slate-500">
-                    dastuur-agent.app
+                    Dastuur.omar.com
                   </div>
                 </div>
                 <div className="space-y-4">
