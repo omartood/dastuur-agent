@@ -66,7 +66,7 @@ export default function LandingPage() {
 
               {/* Subheadline */}
               <p className="text-lg sm:text-2xl text-slate-600 mb-10 max-w-3xl mx-auto leading-relaxed px-2">
-                Waxaan ku caawinayaa inaad fahanto <span className="font-semibold text-blue-600">Dastuurka Jamhuuriyadda Federaalka Soomaaliya</span> adoo isticmaalaya teknoolajiyada AI-ga casriga ah.
+                Waxaan ka caawinayaa inaad fahanto <span className="font-semibold text-blue-600">Dastuurka Jamhuuriyadda Federaalka Soomaaliya</span> adoo isticmaalaya teknoolajiyada AI-ga casriga ah.
               </p>
 
               {/* CTA Buttons */}
@@ -156,7 +156,7 @@ export default function LandingPage() {
                 </div>
                 <h3 className="text-2xl font-bold mb-3 text-slate-900">Raadinta Xaqiiqda</h3>
                 <p className="text-slate-600 leading-relaxed">
-                  Raadi qodobada iyo cutubada Dastuurka si degdeg ah oo sax ah adoo isticmaalaya luuqadda dabiiciga ah.
+                  Raadi qodobada iyo cutubada Dastuurka si degdeg ah oo sax ah adoo isticmaalaya luuqadda Hooyo.
                 </p>
               </div>
 
@@ -229,7 +229,7 @@ export default function LandingPage() {
                   <div className="mt-4">
                     <h3 className="text-2xl font-bold mb-4 text-slate-900">Weydii Su'aashaada</h3>
                     <p className="text-slate-600 leading-relaxed">
-                      Qor su'aashaada ku saabsan Dastuurka Soomaaliya adoo isticmaalaya luuqadda dabiiciga ah.
+                      Qor su'aashaada ku saabsan Dastuurka Soomaaliya adoo isticmaalaya luuqadda hooyo.
                     </p>
                   </div>
                 </div>
