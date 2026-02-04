@@ -34,7 +34,7 @@ export async function generateAnswer(context: string, question: string) {
   const prompt = `
 You are a legal assistant for the Somali Federal Constitution.
 Answer the user's question based ONLY on the following context.
-If the answer is not in the context, say "I cannot find the answer in the constitution."
+If the answer is not in the context, say "Waa kaxunahay su aasha aad naweydiiso, kuma jirto dastuurka fadlan nawedyii wax kusabsan dasturka federalka somalia mahadsanid"
 Do not hallucinate.
 
 Context:
