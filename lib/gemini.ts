@@ -4,6 +4,14 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 let genAI: GoogleGenerativeAI | null = null;
 
+// In-memory caches to reduce API calls and avoid rate limits
+const embeddingCache = new Map<string, number[]>();
+const answerCache = new Map<string, string>();
+
+function normalizeText(text: string): string {
+  return text.trim().toLowerCase();
+}
+
 function getClient() {
   if (!genAI) {
     if (!process.env.GEMINI_API_KEY) {
@@ -36,15 +44,29 @@ async function withRetry<T>(fn: () => Promise<T>, maxRetries = 3, initialDelay =
 }
 
 export async function getEmbedding(text: string): Promise<number[]> {
+  const normText = normalizeText(text);
+  if (embeddingCache.has(normText)) {
+    console.log("Cache hit for embedding:", normText.substring(0, 30) + "...");
+    return embeddingCache.get(normText)!;
+  }
+
   return withRetry(async () => {
     const client = getClient();
     const model = client.getGenerativeModel({ model: "text-embedding-004" });
     const result = await model.embedContent(text);
-    return result.embedding.values;
+    const values = result.embedding.values;
+    embeddingCache.set(normText, values);
+    return values;
   });
 }
 
 export async function generateAnswer(context: string, question: string) {
+  const normKey = normalizeText(`${context}|${question}`);
+  if (answerCache.has(normKey)) {
+    console.log("Cache hit for answer:", question.substring(0, 30) + "...");
+    return answerCache.get(normKey)!;
+  }
+
   return withRetry(async () => {
     const client = getClient();
     const model = client.getGenerativeModel({ model: "gemini-flash-latest" });
@@ -64,6 +86,8 @@ ${question}
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
-    return response.text();
+    const answer = response.text();
+    answerCache.set(normKey, answer);
+    return answer;
   });
 }
