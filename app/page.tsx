@@ -53,7 +53,7 @@ export default function LandingPage() {
             </div>
 
             {/* Main Headline */}
-            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold mb-6 leading-tight">
+            <h1 className="text-4xl sm:text-6xl lg:text-7xl font-bold mb-6 leading-tight">
               <span className="bg-clip-text text-transparent bg-gradient-to-r from-slate-900 via-blue-800 to-cyan-700">
                 Your AI-Powered
               </span>
@@ -64,22 +64,22 @@ export default function LandingPage() {
             </h1>
 
             {/* Subheadline */}
-            <p className="text-xl sm:text-2xl text-slate-600 mb-12 max-w-3xl mx-auto leading-relaxed">
+            <p className="text-lg sm:text-2xl text-slate-600 mb-10 max-w-3xl mx-auto leading-relaxed px-2">
               Waxaan ku caawinayaa inaad fahanto <span className="font-semibold text-blue-600">Dastuurka Jamhuuriyadda Federaalka Soomaaliya</span> adoo isticmaalaya teknoolajiyada AI-ga casriga ah.
             </p>
 
             {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16 px-4">
               <Link
                 href="/chat"
-                className="group px-8 py-4 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-2xl font-semibold text-lg shadow-2xl shadow-blue-500/40 hover:shadow-blue-500/60 transform hover:scale-105 transition-all duration-200 flex items-center gap-3"
+                className="group w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-blue-600 to-cyan-500 text-white rounded-2xl font-semibold text-lg shadow-2xl shadow-blue-500/40 hover:shadow-blue-500/60 transform hover:scale-105 transition-all duration-200 flex items-center justify-center gap-3"
               >
                 Bilow Hadda
                 <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
               </Link>
               <a
                 href="#features"
-                className="px-8 py-4 bg-white text-slate-700 rounded-2xl font-semibold text-lg shadow-lg hover:shadow-xl border-2 border-slate-200 hover:border-blue-300 transform hover:scale-105 transition-all duration-200 flex items-center gap-3"
+                className="w-full sm:w-auto px-8 py-4 bg-white text-slate-700 rounded-2xl font-semibold text-lg shadow-lg hover:shadow-xl border-2 border-slate-200 hover:border-blue-300 transform hover:scale-105 transition-all duration-200 flex items-center justify-center gap-3"
               >
                 Baro Wax Badan
                 <ChevronDown size={20} />
@@ -87,9 +87,9 @@ export default function LandingPage() {
             </div>
 
             {/* Hero Image/Visual */}
-            <div className="relative max-w-5xl mx-auto">
+            <div className="relative max-w-5xl mx-auto mt-8 sm:mt-16">
               <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 blur-3xl rounded-full"></div>
-              <div className="relative bg-white/80 backdrop-blur-lg rounded-3xl shadow-2xl border border-slate-200/60 p-8 transform hover:scale-[1.02] transition-transform duration-300">
+              <div className="relative bg-white/80 backdrop-blur-lg rounded-3xl shadow-2xl border border-slate-200/60 p-4 sm:p-8 transform hover:scale-[1.02] transition-transform duration-300">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="flex gap-2">
                     <div className="w-3 h-3 rounded-full bg-red-400"></div>

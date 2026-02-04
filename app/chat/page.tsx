@@ -154,16 +154,16 @@ export default function Home() {
       <div className="flex flex-col flex-1 h-screen">
         {/* Premium Header */}
         <header className="bg-white/80 backdrop-blur-md sticky top-0 z-10 border-b border-slate-200/60 shadow-sm">
-          <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="bg-gradient-to-tr from-blue-600 to-cyan-500 text-white p-2.5 rounded-xl shadow-lg shadow-blue-500/20">
-                <Scale className="w-6 h-6" />
+          <div className="max-w-4xl mx-auto px-4 py-2 sm:py-3 flex items-center justify-between">
+            <div className="flex items-center gap-2 sm:gap-3 ml-12 lg:ml-0">
+              <div className="bg-gradient-to-tr from-blue-600 to-cyan-500 text-white p-2 rounded-lg sm:rounded-xl shadow-lg shadow-blue-500/20">
+                <Scale className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
               <div>
-                <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700">
+                <h1 className="text-lg sm:text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700">
                   Dastuur Agent
                 </h1>
-                <p className="text-xs font-medium text-slate-500 flex items-center gap-1">
+                <p className="text-[10px] sm:text-xs font-medium text-slate-500 flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                   Online
                 </p>
@@ -245,13 +245,13 @@ export default function Home() {
         </div>
 
         {/* Input Area */}
-        <div className="p-4 bg-white/80 backdrop-blur-lg border-t border-slate-200">
+        <div className="p-3 sm:p-4 bg-white/80 backdrop-blur-lg border-t border-slate-200">
           <div className="max-w-4xl mx-auto">
             <form onSubmit={handleSubmit} className="relative group shadow-lg shadow-slate-200/40 rounded-2xl bg-white">
               <input
                 type="text"
-                className="w-full bg-transparent border-2 border-transparent focus:border-blue-500/30 rounded-2xl pl-5 pr-14 py-4 focus:outline-none focus:ring-0 transition-all placeholder:text-slate-400 text-slate-700"
-                placeholder="Weydii su'aal ku saabsan Dastuurka..."
+                className="w-full bg-transparent border-2 border-transparent focus:border-blue-500/30 rounded-2xl pl-4 sm:pl-5 pr-12 sm:pr-14 py-3 sm:py-4 focus:outline-none focus:ring-0 transition-all placeholder:text-slate-400 text-slate-700 text-sm sm:text-base"
+                placeholder="Weydii su'aal..."
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 disabled={loading}
@@ -259,9 +259,9 @@ export default function Home() {
               <button
                 type="submit"
                 disabled={loading || !input.trim()}
-                className="absolute right-2 top-2 bottom-2 aspect-square bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:bg-slate-300 text-white rounded-xl transition-all flex items-center justify-center shadow-md shadow-blue-500/20 hover:shadow-blue-500/40 transform hover:scale-105 active:scale-95"
+                className="absolute right-1.5 top-1.5 bottom-1.5 aspect-square bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:bg-slate-300 text-white rounded-xl transition-all flex items-center justify-center shadow-md shadow-blue-500/20 hover:shadow-blue-500/40 transform hover:scale-105 active:scale-95"
               >
-                {loading ? <Loader2 size={20} className="animate-spin" /> : <Send size={20} />}
+                {loading ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
               </button>
             </form>
             <p className="text-center text-xs text-slate-400 mt-3">
