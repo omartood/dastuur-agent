@@ -98,7 +98,11 @@ export default function Home() {
         const assistantMessage: Message = { role: "assistant", content: data.answer };
         setChats(prev => updateChat(prev, currentChatId, [...newMessages, assistantMessage]));
       } else {
-        const errorMessage: Message = { role: "assistant", content: "⚠️ **Raalli ahoow**, cilad ayaa dhacday." };
+        let errorContent = "⚠️ **Raalli ahoow**, cilad ayaa dhacday.";
+        if (res.status === 429) {
+          errorContent = "⚠️ **Rate Limit**: Waxaad dhaaftay xadka codsiyada AI-ga. Fadlan sug ilbiriqsiyo ka hor intaadan isku dayin markale.";
+        }
+        const errorMessage: Message = { role: "assistant", content: errorContent };
         setChats(prev => updateChat(prev, currentChatId, [...newMessages, errorMessage]));
       }
     } catch (error) {

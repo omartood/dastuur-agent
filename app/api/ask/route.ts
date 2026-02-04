@@ -42,8 +42,15 @@ export async function POST(req: NextRequest) {
       context: chunks.map(c => c.text) // Optional: return sources
     });
 
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error in /api/ask:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    
+    // Check for specific API error status codes
+    const status = error?.status || error?.response?.status || 500;
+    const message = status === 429 
+      ? "Rate limit reached. Please wait a moment before trying again." 
+      : "Internal Server Error";
+
+    return NextResponse.json({ error: message }, { status });
   }
 }
