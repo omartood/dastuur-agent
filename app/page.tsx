@@ -18,8 +18,8 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-3">
-              <div className="flex-shrink-0">
-                <img src="/logo.png" alt="Dastuur Agent Logo" className="w-10 h-10 object-contain rounded-xl shadow-lg shadow-blue-500/20" />
+              <div className="bg-gradient-to-tr from-blue-600 to-cyan-500 text-white p-2 rounded-xl shadow-lg shadow-blue-500/20">
+                <Scale className="w-6 h-6" />
               </div>
               <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700">
                 Dastuur Agent
@@ -292,8 +292,8 @@ export default function LandingPage() {
       <footer className="bg-slate-900 text-slate-300 py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto text-center">
           <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="flex-shrink-0">
-              <img src="/logo.png" alt="Dastuur Agent Logo" className="w-8 h-8 object-contain rounded-xl" />
+            <div className="bg-gradient-to-tr from-blue-600 to-cyan-500 text-white p-2 rounded-xl">
+              <Scale className="w-6 h-6" />
             </div>
             <span className="text-2xl font-bold text-white">Dastuur Agent</span>
           </div>
