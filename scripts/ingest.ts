@@ -3,24 +3,11 @@ dotenv.config();
 
 import fs from 'fs';
 import path from 'path';
-// import { createRequire } from 'module';
-// const require = createRequire(import.meta.url);
-// const pdf = require('pdf-parse');
 import { PDFParse } from 'pdf-parse';
-import { v4 as uuidv4 } from 'uuid';
-
+import { storeChunk, initMemory } from '../lib/memvid';
 import { getEmbedding } from '../lib/gemini';
 
-// Or assume user runs with `export GEMINI_API_KEY=... ts-node scripts/ingest.ts`
-// Better to just try reading process.env if available or error out.
-
 const PDF_PATH = path.join(process.cwd(), 'pdf', 'Dastuurka_ku_meelgaarka_SOM_03092012-1_2.pdf');
-const OUT_PATH = path.join(process.cwd(), 'data', 'embeddings.json');
-
-// Ensure data dir exists
-if (!fs.existsSync(path.dirname(OUT_PATH))) {
-  fs.mkdirSync(path.dirname(OUT_PATH), { recursive: true });
-}
 
 async function main() {
   console.log("Reading PDF from:", PDF_PATH);
@@ -29,9 +16,13 @@ async function main() {
     process.exit(1);
   }
 
+  // Pre-initialize memory to ensure settings are applied
+  const memory = await initMemory();
+  await memory.setVectorCompression(true);
+
   const dataBuffer = fs.readFileSync(PDF_PATH);
   
-  // New API usage
+  // Parse PDF
   const parser = new PDFParse({ data: dataBuffer });
   const data = await parser.getText();
   
@@ -39,35 +30,41 @@ async function main() {
   console.log(`Extracted ${text.length} characters.`);
 
   // Simple chunking by paragraph or double newline
-  // For a constitution, articles are often separated by clear headings or whitespace.
-  // We'll use a pragmatic approach: split by double newlines, then merge small chunks.
-  
   let chunks = text.split(/\n\s*\n/);
-  chunks = chunks.filter((c: string) => c.trim().length > 50); // Remove noise
+  chunks = chunks.filter((c: string) => c.trim().length > 50);
 
   console.log(`Split into ${chunks.length} chunks.`);
 
-  const embeddedChunks = [];
+  // Store chunks using Gemini embeddings + Memvid storage
+  console.log(`Starting storage process for ${chunks.length} chunks...`);
   
+  let successCount = 0;
   for (let i = 0; i < chunks.length; i++) {
     const chunkText = chunks[i].trim();
-    console.log(`Embedding chunk ${i + 1}/${chunks.length}...`);
+    // console.log(`Processing chunk ${i + 1}/${chunks.length}...`); // Reduce noise
+    process.stdout.write(`\rProcessing chunk ${i + 1}/${chunks.length}...`);
+    
     try {
+      // 1. Get embedding from Gemini
       const embedding = await getEmbedding(chunkText);
-      embeddedChunks.push({
-        id: uuidv4(),
-        text: chunkText,
-        embedding
+      
+      // 2. Store in Memvid with manual embedding
+      await storeChunk(chunkText, embedding, {
+        index: i,
+        source: 'Dastuurka_ku_meelgaarka_SOM_03092012-1_2.pdf',
+        processedAt: new Date().toISOString()
       });
-      // Rate limiting precaution
-      await new Promise(resolve => setTimeout(resolve, 200)); 
+      
+      successCount++;
+      
+      // Delay to avoid rate limits
+      await new Promise(resolve => setTimeout(resolve, 500)); 
     } catch (e) {
-      console.error(`Failed to embed chunk ${i}`, e);
+      console.error(`\nFailed to store chunk ${i}:`, e);
     }
   }
 
-  fs.writeFileSync(OUT_PATH, JSON.stringify(embeddedChunks, null, 2));
-  console.log(`Saved ${embeddedChunks.length} embeddings to ${OUT_PATH}`);
+  console.log(`\nSuccessfully ingested ${successCount}/${chunks.length} chunks to constitution.mv2`);
 }
 
 main().catch(console.error);

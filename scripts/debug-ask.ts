@@ -1,52 +1,44 @@
 import dotenv from 'dotenv';
 dotenv.config();
 
-import { getEmbedding, generateAnswer } from "@/lib/gemini";
-import { search, loadStore } from "@/lib/memvid";
-import path from "path";
+import { searchMemory, loadStore } from "../lib/memvid";
+import { getEmbedding, generateAnswer } from "../lib/gemini";
 
 async function main() {
-  console.log("=== Debugging API Logic ===");
+  console.log("=== Debugging Split RAG (Memvid + Gemini) ===");
   console.log("CWD:", process.cwd());
   
-  if (!process.env.GEMINI_API_KEY) {
-    console.error("ERROR: GEMINI_API_KEY is missing from env");
-    return;
-  }
-  console.log("API Key present (length):", process.env.GEMINI_API_KEY.length);
-
   try {
-    console.log("1. Loading Store...");
+    console.log("1. Initializing Stores...");
     loadStore();
     
-    const question = "cutub-ka koowad maxuu kahadlayaa";
+    const question = process.argv[2] || "cutub-ka koowad maxuu kahadlayaa";
     console.log(`2. Question: "${question}"`);
 
-    console.log("3. Generating Embedding...");
-    const embedding = await getEmbedding(question);
-    console.log("   Embedding generated. Length:", embedding.length);
+    console.log("3. (Skipping Embedding to avoid dimension mismatch)...");
+    // const embedding = await getEmbedding(question);
 
-    console.log("4. Searching Memvid...");
-    const chunks = search(embedding, 5);
-    console.log(`   Found ${chunks.length} chunks.`);
-    if (chunks.length > 0) {
-      console.log("   Top chunk text preview:", chunks[0].text.substring(0, 100));
-    } else {
-      console.warn("   WARNING: No chunks found. This implies dot product failed or store empty.");
+    console.log("4. Searching Memvid Memory (Lexical)...");
+    const hits = await searchMemory(question, undefined, 5);
+    
+    if (!hits || hits.length === 0) {
+      console.log("No relevant chunks found in memory.");
+      return;
     }
 
-    if (chunks.length === 0) {
-        console.log("Skipping generation as no chunks found.");
-        return;
-    }
+    console.log(`Found ${hits.length} relevant chunks.`);
+    const context = hits.map(hit => hit.snippet).join("\n\n---\n\n");
 
-    console.log("5. Generating Answer...");
-    const context = chunks.map(c => c.text).join("\n\n---\n\n");
+    console.log("5. Generating Answer via Gemini...");
     const answer = await generateAnswer(context, question);
     
-    console.log("\n=== ANSWER ===");
-    console.log(answer);
-    console.log("==============");
+    console.log("\n=== FINAL RESPONSE ===");
+    console.log("Answer:", answer);
+    console.log("\nSources Used:");
+    hits.forEach((s: any, i: number) => {
+      console.log(`[${i + 1}] Score: ${s.score?.toFixed(3)} | Snippet: ${s.snippet.substring(0, 100)}...`);
+    });
+    console.log("========================\n");
 
   } catch (e) {
     console.error("!!! CRITICAL ERROR !!!");
