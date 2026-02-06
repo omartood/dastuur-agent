@@ -24,9 +24,7 @@ export default function Sidebar({
 
   const handleDeleteChat = (e: React.MouseEvent, chatId: string) => {
     e.stopPropagation();
-    if (confirm("Ma hubtaa inaad tirtirto sheekan?")) {
-      onDeleteChat(chatId);
-    }
+    onDeleteChat(chatId);
   };
 
   const formatDate = (timestamp: number) => {

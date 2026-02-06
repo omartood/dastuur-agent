@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Send, Scale, User, Bot, Sparkles, Loader2, BookOpen, Info } from "lucide-react";
+import { toast } from "sonner";
 import clsx from "clsx";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -125,24 +126,46 @@ export default function Home() {
   };
 
   const handleDeleteChat = (chatId: string) => {
+    // Identify the chat being deleted for undo capability
+    const chatToDelete = chats.find(c => c.id === chatId);
+    
     // 1. Calculate the new chats list
     const updatedChats = deleteChatUtil(chats, chatId);
     
     // 2. Determine who should be active next
     if (chatId === currentChatId) {
       if (updatedChats.length > 0) {
-        // If other chats exist, switch to the first one
         setCurrentChatId(updatedChats[0].id);
         setChats(updatedChats);
       } else {
-        // If no chats left, create a new valid one immediately
         const newChat = createNewChat();
         setCurrentChatId(newChat.id);
         setChats([newChat]);
       }
     } else {
-      // Deleting an inactive chat, simply update the list
       setChats(updatedChats);
+    }
+
+    // 3. Show Toast with Undo
+    if (chatToDelete) {
+      toast.success("Sheekada waa la tirtiray", {
+        action: {
+          label: "Soo celi",
+          onClick: () => {
+            setChats(prev => {
+              const restored = [...prev, chatToDelete].sort((a, b) => b.updatedAt - a.updatedAt);
+              // If restored chat matches previously active ID (if we kept track), that would be cool,
+              // but purely adding it back is sufficient.
+              return restored;
+            });
+            // Optionally restore selection if we want to be fancy, but this is good enough.
+            if (chatToDelete.id === chatId) {
+                 // For now just restore the data.
+            }
+          }
+        },
+        duration: 4000,
+      });
     }
   };
 

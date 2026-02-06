@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
+import { Toaster } from "sonner";
 
 // Use system fonts or google fonts as configured later. For now just basic.
 // We can use the default fonts from create-next-app safely.
@@ -87,6 +88,7 @@ export default function RootLayout({
         className={`antialiased`}
       >
         {children}
+        <Toaster position="top-center" richColors />
       </body>
     </html>
   );
