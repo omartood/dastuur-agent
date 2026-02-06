@@ -1,97 +1,132 @@
-import fs from 'fs';
+import { create, open, configure, type Memvid, type FindResult, type AskResult } from '@memvid/sdk';
 import path from 'path';
+import fs from 'fs';
 
-export interface Chunk {
-  id: string;
-  text: string;
-  embedding: number[];
-  metadata?: any;
-}
+const MEMORY_PATH = path.join(process.cwd(), 'data', 'constitution.mv2');
 
-// Simple in-memory store
-let store: Chunk[] = [];
-let isLoaded = false;
+let memoryInstance: Memvid | null = null;
 
-const DATA_PATH = path.join(process.cwd(), 'data', 'embeddings.json');
+/**
+ * Initialize or open the Memvid memory file
+ */
+export async function initMemory(): Promise<Memvid> {
+  if (memoryInstance) return memoryInstance;
 
-export function loadStore() {
-  if (isLoaded) return;
-  
-  if (fs.existsSync(DATA_PATH)) {
-    console.log("Loading embeddings from disk...");
-    const raw = fs.readFileSync(DATA_PATH, 'utf-8');
-    store = JSON.parse(raw);
-    isLoaded = true;
-    console.log(`Loaded ${store.length} chunks.`);
-  } else {
-    console.warn("No embeddings file found at " + DATA_PATH);
-  }
-}
-
-function cosineSimilarity(a: number[], b: number[]) {
-  let dot = 0;
-  let normA = 0;
-  let normB = 0;
-  for (let i = 0; i < a.length; i++) {
-    dot += a[i] * b[i];
-    normA += a[i] * a[i];
-    normB += b[i] * b[i];
-  }
-  return dot / (Math.sqrt(normA) * Math.sqrt(normB));
-}
-
-// Basic token-based scoring to boost exact matches (Hybrid Search Lite)
-function keywordScore(query: string, text: string): number {
-  // Split by space, remove punctuation, filter short words
-  const normalize = (s: string) => s.toLowerCase().replace(/[^\w\s]/g, '');
-  const qTerms = normalize(query).split(/\s+/).filter(t => t.length > 3);
-  
-  if (qTerms.length === 0) return 0;
-  
-  const textLower = normalize(text);
-  let hits = 0;
-  for (const term of qTerms) {
-    if (textLower.includes(term)) {
-      hits++;
-    }
-  }
-  
-  // Special boost for article number queries (e.g., "Qodobka 3aad")
-  // Extract article number from query
-  const articleMatch = query.match(/qodobka\s+(\d+)(?:aad|naad|saad|aad)/i);
-  if (articleMatch) {
-    const articleNum = articleMatch[1];
-    // Check if the text contains this specific article with actual content (not just TOC)
-    const articlePattern = new RegExp(`qodobka\\s+${articleNum}(?:aad|naad|saad)\\s*\\.\\s*\\w+`, 'i');
-    if (articlePattern.test(text)) {
-      // Strong boost if we find the actual article header with content
-      hits += 5;
-    }
-  }
-  
-  return hits / (qTerms.length + 1); // +1 to account for potential article boost
-}
-
-export function search(queryEmbedding: number[], topK: number = 5, queryText: string = ""): Chunk[] {
-  if (!isLoaded) loadStore();
-
-  const scored = store.map(chunk => {
-    const cosine = cosineSimilarity(queryEmbedding, chunk.embedding);
-    let score = cosine;
-    
-    // Boost if keywords match (weighted mix)
-    // If queryText is provided, mix in keyword score
-    if (queryText) {
-       const kwScore = keywordScore(queryText, chunk.text);
-       // Weighting: 60% vector, 40% keyword for better article matching
-       score = (cosine * 0.6) + (kwScore * 0.4);
-    }
-    
-    return { chunk, score };
+  // Configure global defaults
+  configure({
+    apiKey: process.env.MEMVID_API_KEY,
+    defaultEmbeddingProvider: 'memvid',
   });
 
-  // Sort descending
-  scored.sort((a, b) => b.score - a.score);
+  try {
+    // Check if memory file exists
+    if (fs.existsSync(MEMORY_PATH)) {
+      console.log('Opening existing memory file:', MEMORY_PATH);
+      memoryInstance = await open(MEMORY_PATH);
+    } else {
+      console.log('Creating new memory file:', MEMORY_PATH);
+      // Ensure data directory exists
+      const dir = path.dirname(MEMORY_PATH);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+      memoryInstance = await create(MEMORY_PATH);
+      // Enable vector search features on new create
+      await memoryInstance.setVectorCompression(true);
+      await memoryInstance.enableLex();
+    }
+    
+    // Always ensure lexical search is enabled for the session
+    try {
+      await memoryInstance.enableLex();
+    } catch (e) {
+      console.log('Lexical search already enabled or not needed');
+    }
+    
+    if (!memoryInstance) {
+        throw new Error("Failed to initialize Memvid instance");
+    }
+    return memoryInstance;
+  } catch (error) {
+    console.error('Error initializing memory:', error);
+    throw error;
+  }
+}
 
-  return scored.slice(0, topK).map(s => s.chunk);
+/**
+ * Store a document chunk in memory with manual embedding from Gemini
+ */
+export async function storeChunk(text: string, embedding?: number[], metadata?: Record<string, any>) {
+  const memory = await initMemory();
+  
+  try {
+    const frameId = await memory.put({
+      text,
+      metadata: metadata || {},
+      embedding, // Manual embedding from Gemini
+      enableEmbedding: false, // Disable auto-embedding to avoid API key errors
+    });
+    console.log('Stored chunk with frame ID:', frameId, '-', text.substring(0, 50) + '...');
+    return frameId;
+  } catch (error) {
+    console.error('Error storing chunk:', error);
+    throw error;
+  }
+}
+
+/**
+ * Extract key search terms from Somali questions
+ */
+function extractSearchTerms(query: string): string {
+  // Extract patterns like "qodobka Xaad" (article X) from questions
+  const articleMatch = query.match(/qodobka\s+(\d+)(?:aad)?/i);
+  if (articleMatch) {
+    return `qodobka ${articleMatch[1]}aad`;
+  }
+  
+  // Remove common question words in Somali
+  const stopWords = ['maxuu', 'maxay', 'maxaan', 'ka', 'hadlayaa', 'hadlayaan', 'yihiin', 'waa', 'yahay', 'tahay'];
+  const words = query.toLowerCase().replace(/[?!.,]/g, '').split(/\s+/);
+  const filtered = words.filter(w => !stopWords.includes(w) && w.length > 2);
+  
+  return filtered.slice(0, 3).join(' ') || query;
+}
+
+/**
+ * Search integration for low-level access
+ */
+export async function searchMemory(query: string, queryEmbedding?: number[], limit: number = 5) {
+  const memory = await initMemory();
+  try {
+    // For lexical search, extract key terms from the query
+    const searchQuery = queryEmbedding ? query : extractSearchTerms(query);
+    console.log('Search query:', searchQuery, '(original:', query, ')');
+    
+    const results = await memory.find(searchQuery, {
+      k: limit,
+      mode: queryEmbedding ? 'auto' : 'lex',  // Use lexical search if no custom embedding
+      queryEmbedding: queryEmbedding,
+    }) as FindResult;
+    return results.hits || [];
+  } catch (error) {
+    console.error('Error searching memory:', error);
+    throw error;
+  }
+}
+
+/**
+ * Legacy compatibility: Load store
+ */
+export function loadStore() {
+  console.log('loadStore called');
+}
+
+export async function search(queryEmbedding: number[], topK: number = 5, queryText: string = "") {
+  const hits = await searchMemory(queryText, queryEmbedding, topK);
+  return hits.map((hit: any) => ({
+    id: hit.frame_id?.toString() || hit.uri || '',
+    text: hit.snippet || '',
+    embedding: [], 
+    metadata: {},
+  }));
 }

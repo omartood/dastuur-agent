@@ -1,5 +1,4 @@
 
-
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import fs from 'fs';
 import path from 'path';
@@ -43,37 +42,35 @@ function saveCache() {
   }
 }
 
-function normalizeText(text: string): string {
-  return text.trim().toLowerCase();
-}
-
 function getClient() {
   if (!genAI) {
-    if (!process.env.GEMINI_API_KEY) {
-      throw new Error("GEMINI_API_KEY is not defined in environment variables");
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error("GEMINI_API_KEY is not set in environment variables");
     }
-    genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    genAI = new GoogleGenerativeAI(apiKey);
   }
   return genAI;
 }
 
-async function withRetry<T>(fn: () => Promise<T>, maxRetries = 6, initialDelay = 2000): Promise<T> {
+function normalizeText(text: string): string {
+  return text.toLowerCase().trim().replace(/\s+/g, ' ');
+}
+
+async function withRetry<T>(fn: () => Promise<T>, retries = 3, delay = 2000): Promise<T> {
   let lastError: any;
-  for (let i = 0; i < maxRetries; i++) {
+  for (let i = 0; i < retries; i++) {
     try {
       return await fn();
     } catch (error: any) {
       lastError = error;
-      // 429 is Too Many Requests, 500-599 are server errors
-      const status = error?.status || error?.response?.status || (error?.message?.includes("429") ? 429 : null);
-      const isRetryable = status === 429 || (status >= 500 && status <= 599) || error?.message?.includes("fetch failed");
-      
-      if (!isRetryable || i === maxRetries - 1) throw error;
-      
-      // Exponential backoff with jitter
-      const delay = initialDelay * Math.pow(2, i) + Math.random() * 1000;
-      console.warn(`Retry ${i + 1}/${maxRetries} after ${Math.round(delay)}ms due to: ${error.message}`);
-      await new Promise(resolve => setTimeout(resolve, delay));
+      if (error.status === 429 || error.message?.includes('429')) {
+        const waitTime = delay * Math.pow(2, i) + Math.random() * 1000;
+        console.warn(`Rate limited (429). Retrying in ${Math.round(waitTime)}ms... (Attempt ${i + 1}/${retries})`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+        continue;
+      }
+      throw error;
     }
   }
   throw lastError;
@@ -83,13 +80,12 @@ export async function getEmbedding(text: string): Promise<number[]> {
   loadCache();
   const normText = normalizeText(text);
   if (embeddingCache.has(normText)) {
-    console.log("Cache hit for embedding:", normText.substring(0, 30) + "...");
     return embeddingCache.get(normText)!;
   }
 
   return withRetry(async () => {
     const client = getClient();
-    const model = client.getGenerativeModel({ model: "text-embedding-004" });
+    const model = client.getGenerativeModel({ model: "gemini-embedding-001" });
     const result = await model.embedContent(text);
     const values = result.embedding.values;
     embeddingCache.set(normText, values);
@@ -102,32 +98,39 @@ export async function generateAnswer(context: string, question: string) {
   loadCache();
   const normKey = normalizeText(`${context}|${question}`);
   if (answerCache.has(normKey)) {
-    console.log("Cache hit for answer:", question.substring(0, 30) + "...");
+    console.log("Cache hit for answer");
     return answerCache.get(normKey)!;
   }
 
   return withRetry(async () => {
     const client = getClient();
-    const model = client.getGenerativeModel({ model: "gemini-flash-latest" });
-    
-    const prompt = `
-You are a legal assistant for the Somali Federal Constitution.
-Answer the user's question based ONLY on the following context.
-If the answer is not in the context, say "Waa kaxunahay su aasha aad naweydiiso, kuma jirto dastuurka fadlan nawedyii wax kusabsan dasturka federalka somalia mahadsanid"
-Do not hallucinate.
+    const model = client.getGenerativeModel({ 
+      model: "gemini-2.0-flash", // Stable fast model
+      generationConfig: {
+        temperature: 0.1, // Lower temperature for more grounded answers
+      }
+    });
 
-Context:
+    const prompt = `
+Waxaad tahay khabiir ku takhasusay Dastuurka Federaalka ee Soomaaliya. 
+Hoos waxaa ku qoran qaybo ka mid ah Dastuurka oo laga soo saaray xogta rasmiga ah:
+
+XOGTA DASTUURKA:
 ${context}
 
-Question:
+SU'AASHA:
 ${question}
-`;
+
+ADIGOO ISTICMAALAYA KALIYA XOGTA KOR KU QORAN, fadlan uga jawaab su'aasha si kooban oo cad adigoo isticmaalaya luuqadda Soomaaliga. 
+Haddii jawaabta aysan ku jirin xogta kor ku qoran, waxaad ku jawaabtaa: "Waa kaxunahay su aasha aad naweydiiso, kuma jirto dastuurka fadlan nawedyii wax kusabsan dasturka federalka somalia mahadsanid".
+    `.trim();
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
-    const answer = response.text();
-    answerCache.set(normKey, answer);
+    const text = response.text();
+    
+    answerCache.set(normKey, text);
     saveCache();
-    return answer;
+    return text;
   });
 }
