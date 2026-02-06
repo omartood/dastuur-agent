@@ -125,22 +125,25 @@ export default function Home() {
   };
 
   const handleDeleteChat = (chatId: string) => {
-    setChats(prev => {
-      const updated = deleteChatUtil(prev, chatId);
-      
-      // If deleting the active chat, switch to another or create new
-      if (chatId === currentChatId) {
-        if (updated.length > 0) {
-          setCurrentChatId(updated[0].id);
-        } else {
-          const newChat = createNewChat();
-          setCurrentChatId(newChat.id);
-          return [newChat];
-        }
+    // 1. Calculate the new chats list
+    const updatedChats = deleteChatUtil(chats, chatId);
+    
+    // 2. Determine who should be active next
+    if (chatId === currentChatId) {
+      if (updatedChats.length > 0) {
+        // If other chats exist, switch to the first one
+        setCurrentChatId(updatedChats[0].id);
+        setChats(updatedChats);
+      } else {
+        // If no chats left, create a new valid one immediately
+        const newChat = createNewChat();
+        setCurrentChatId(newChat.id);
+        setChats([newChat]);
       }
-      
-      return updated;
-    });
+    } else {
+      // Deleting an inactive chat, simply update the list
+      setChats(updatedChats);
+    }
   };
 
   return (
